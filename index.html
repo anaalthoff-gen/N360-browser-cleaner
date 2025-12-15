@@ -949,6 +949,63 @@
       font-size: 13px;
     }
     
+    /* Check Again Button */
+    .btn-check-again {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 24px;
+      border: 2px solid rgba(36, 36, 36, 0.5);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-check-again.disabled,
+    .btn-check-again:disabled {
+      cursor: not-allowed;
+    }
+    
+    .btn-check-again-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(36, 36, 36, 0.5);
+    }
+    
+    .btn-check-again-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .btn-check-again-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 16px;
+      letter-spacing: -0.3px;
+      color: rgba(36, 36, 36, 0.5);
+      white-space: nowrap;
+    }
+    
+    .btn-check-again:not(:disabled):hover {
+      border-color: #242424;
+      background: rgba(36, 36, 36, 0.05);
+    }
+    
+    .btn-check-again:not(:disabled):hover .btn-check-again-icon,
+    .btn-check-again:not(:disabled):hover .btn-check-again-text {
+      color: #242424;
+    }
+    
+    .btn-check-again:not(:disabled):active {
+      background: rgba(36, 36, 36, 0.1);
+    }
+    
     /* Table Styles */
     .browser-table {
       display: flex;
@@ -1554,13 +1611,14 @@
           <!-- Section Header -->
           <div class="section-header">
             <h2 class="section-title">Select browsers to clean</h2>
-            <button class="btn btn-outline btn-small disabled" disabled id="checkAgainBtn">
-              <span class="btn-icon">
-                <svg viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M16.667 10.833c.23 0 .416.187.416.417a7.083 7.083 0 1 1-2.08-5.01l-.586.59a.417.417 0 0 0 .295.712h2.871a.417.417 0 0 0 .417-.417V4.254a.417.417 0 0 0-.712-.295l-.823.823A8.333 8.333 0 1 0 18.333 11.25a.417.417 0 0 0-.416-.417h-1.25z"/>
+            <button class="btn-check-again disabled" disabled id="checkAgainBtn">
+              <span class="btn-check-again-icon">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 3.33334C6.31811 3.33334 3.33334 6.31811 3.33334 10C3.33334 13.6819 6.31811 16.6667 10 16.6667C13.6819 16.6667 16.6667 13.6819 16.6667 10C16.6667 8.23189 15.9643 6.62521 14.8229 5.41668" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M10 3.33334L12.5 5.83334L10 8.33334" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
-              Check again
+              <span class="btn-check-again-text">Check again</span>
             </button>
           </div>
 
