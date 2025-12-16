@@ -1365,20 +1365,26 @@
     }
     
     /* Panel content containers */
-    .panel-content {
+    .panel-scanning-state,
+    .panel-completed-state {
       display: flex;
       align-items: center;
       gap: 16px;
       flex: 1;
     }
     
-    .panel-content.scanning-content {
+    .panel-scanning-state {
       justify-content: flex-start;
     }
     
-    .panel-content.completed-content {
+    .panel-completed-state {
       justify-content: flex-end;
       padding-right: 0;
+    }
+    
+    /* Scanning state background tint */
+    .bottom-panel.scanning {
+      background: linear-gradient(0deg, rgba(15, 113, 240, 0.07), rgba(15, 113, 240, 0.07)), #fff;
     }
     
     /* Completed state - right-aligned text */
@@ -1411,6 +1417,19 @@
     /* Completed state progress bar */
     .bottom-panel.scan-completed .progress-fill {
       background: rgba(36, 36, 36, 0.1);
+      animation: none;
+      width: 100%;
+      left: 0;
+    }
+    
+    /* Hide scanning content when completed */
+    .bottom-panel.scan-completed .panel-scanning-state {
+      display: none;
+    }
+    
+    /* Hide completed content when scanning */
+    .bottom-panel.scanning .panel-completed-state {
+      display: none;
     }
     
     /* Clean button disabled state */
@@ -2209,7 +2228,7 @@
           </div>
           
           <!-- Scanning State Content -->
-          <div class="panel-content scanning-content" id="scanningContent">
+          <div class="panel-scanning-state" id="scanningContent">
             <div class="spinner">
               <div class="spinner-track"></div>
               <div class="spinner-indicator">
@@ -2221,16 +2240,16 @@
             
             <div class="panel-text">
               <span class="panel-title">Scanning your browsers...</span>
-              <span class="panel-subtitle">This may take a few seconds.</span>
+              <span class="panel-subtitle">This may take a few minutes.</span>
             </div>
             
             <div class="panel-buttons">
-              <button class="btn btn-secondary" id="stopScanBtn">Stop</button>
+              <button class="btn btn-primary" id="stopScanBtn">Stop scan</button>
             </div>
           </div>
           
           <!-- Completed State Content -->
-          <div class="panel-content completed-content" id="completedContent" style="display: none;">
+          <div class="panel-completed-state" id="completedContent" style="display: none;">
             <div class="panel-text-right">
               <span class="panel-title" id="selectedCountText">0 items selected</span>
               <span class="panel-subtitle">Select browsers to clean</span>
