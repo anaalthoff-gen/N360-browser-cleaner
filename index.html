@@ -1306,21 +1306,71 @@
       font-weight: 500;
     }
     
-    /* Animated counter styles */
-    .cell-size.scanning,
-    .cell-items.scanning {
-      animation: pulse 1.5s ease-in-out infinite;
-    }
+    /* ============================================
+       SCANNING STATE STYLES
+       ============================================ */
     
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    
+    /* Animated counter styles - tabular numbers for stable width */
     .cell-size,
     .cell-items {
       transition: color 0.3s ease;
       font-variant-numeric: tabular-nums;
+    }
+    
+    /* Disabled checkbox styling during scan */
+    .checkbox.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .checkbox.disabled .checkbox-box {
+      background-color: #e0e0e0;
+      border-color: #ccc;
+    }
+    
+    /* Table disabled state during scanning */
+    .results-table.scanning-disabled .table-row {
+      cursor: not-allowed;
+    }
+    
+    .results-table.scanning-disabled .expand-icon {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    /* Bottom panel scanning state */
+    .bottom-panel.scanning .spinner {
+      opacity: 1;
+    }
+    
+    .bottom-panel.scan-completed .spinner {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    /* Spinner active animation */
+    .spinner.active .spinner-indicator {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Progress bar smooth animation */
+    .progress-fill {
+      transition: width 4.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Scan completed panel styling */
+    .bottom-panel.scan-completed .panel-title {
+      color: #4caf50;
+    }
+    
+    .bottom-panel.scan-completed .progress-fill {
+      background: linear-gradient(90deg, #4caf50, #66bb6a);
     }
     
     .table-row.sub-row .cell-actions {
@@ -2133,7 +2183,21 @@
   </div>
 
   <script>
-    // Elements
+    // ============================================
+    // BROWSER CLEANER - SCANNING SIMULATION
+    // ============================================
+    // This is a front-end only scanning simulation for GitHub Pages.
+    // All numbers are fictitious - designed to create the feeling of a real scan.
+    // 
+    // SCAN STATES:
+    // - 'idle': Initial state, ready to scan
+    // - 'scanning': Scan in progress, counters animating, checkboxes disabled
+    // - 'completed': Scan finished, counters stopped, checkboxes enabled
+    // ============================================
+
+    // ============================================
+    // DOM ELEMENTS
+    // ============================================
     const mainMenu = document.getElementById('mainMenu');
     const appWindow = document.querySelector('.app-window');
     const viewInitial = document.getElementById('viewInitial');
@@ -2145,38 +2209,459 @@
     const browserCheckboxes = document.querySelectorAll('.browser-checkbox');
     const expandableRows = document.querySelectorAll('.table-row.expandable');
     const browserRowGroups = document.querySelectorAll('.browser-row-group');
+    const bottomPanel = document.querySelector('.bottom-panel');
+    const panelTitle = document.querySelector('.panel-title');
+    const panelSubtitle = document.querySelector('.panel-subtitle');
+    const progressFill = document.querySelector('.progress-fill');
+    const spinner = document.querySelector('.spinner');
     
+    // ============================================
+    // SCAN STATE MANAGEMENT
+    // ============================================
+    let scanState = 'idle'; // 'idle' | 'scanning' | 'completed'
+    let animationFrameId = null;
+    
+    // Target values for the scan simulation
+    const SCAN_TARGETS = {
+      // Total values
+      totalSize: 3.4 * 1024 * 1024 * 1024, // 3.4 GB in bytes
+      totalItems: 18742,
+      
+      // Per-browser breakdown (simulated)
+      browsers: {
+        safari: {
+          total: { size: 1.2 * 1024 * 1024 * 1024, items: 6840 },
+          cache: { size: 850 * 1024 * 1024, items: 4250 },
+          cookies: { size: 280 * 1024 * 1024, items: 1845 },
+          history: { size: 70 * 1024 * 1024, items: 745 }
+        },
+        chrome: {
+          total: { size: 1.5 * 1024 * 1024 * 1024, items: 8420 },
+          cache: { size: 980 * 1024 * 1024, items: 5680 },
+          cookies: { size: 420 * 1024 * 1024, items: 2120 },
+          history: { size: 100 * 1024 * 1024, items: 620 }
+        },
+        firefox: {
+          total: { size: 700 * 1024 * 1024, items: 3482 },
+          cache: { size: 450 * 1024 * 1024, items: 2100 },
+          cookies: { size: 180 * 1024 * 1024, items: 980 },
+          history: { size: 70 * 1024 * 1024, items: 402 }
+        }
+      }
+    };
+    
+    // Scan duration in milliseconds
+    const SCAN_DURATION = 4500;
+    
+    // ============================================
+    // EASING FUNCTIONS
+    // ============================================
+    /**
+     * Ease-in-out-cubic: Creates non-linear animation
+     * - Slower at the start
+     * - Faster in the middle  
+     * - Slower near the end
+     * This mimics the feel of a real system scan
+     */
+    function easeInOutCubic(t) {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    
+    /**
+     * Ease-out-quart: Fast start, slow finish
+     * Used for individual counter animations
+     */
+    function easeOutQuart(t) {
+      return 1 - Math.pow(1 - t, 4);
+    }
+    
+    // ============================================
+    // NUMBER FORMATTING
+    // ============================================
+    /**
+     * Format bytes to human-readable size (MB, GB)
+     */
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const gb = bytes / (1024 * 1024 * 1024);
+      if (gb >= 1) {
+        return gb.toFixed(1) + ' GB';
+      }
+      const mb = bytes / (1024 * 1024);
+      return Math.round(mb) + ' MB';
+    }
+    
+    /**
+     * Format number with thousand separators
+     */
+    function formatNumber(num) {
+      return Math.round(num).toLocaleString();
+    }
+    
+    // ============================================
+    // CHECKBOX ENABLE/DISABLE LOGIC
+    // ============================================
+    /**
+     * Disable all checkboxes during scanning.
+     * Uses both HTML disabled attribute AND visual styling.
+     */
+    function disableAllCheckboxes() {
+      const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+      allCheckboxes.forEach(cb => {
+        cb.disabled = true;
+        cb.closest('.checkbox')?.classList.add('disabled');
+      });
+      
+      // Add disabled class to table for visual feedback
+      document.querySelector('.results-table')?.classList.add('scanning-disabled');
+    }
+    
+    /**
+     * Enable all checkboxes after scan completes.
+     * Checkboxes start UNSELECTED by default.
+     */
+    function enableAllCheckboxes() {
+      const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+      allCheckboxes.forEach(cb => {
+        cb.disabled = false;
+        cb.checked = false; // Start unselected
+        cb.indeterminate = false;
+        cb.closest('.checkbox')?.classList.remove('disabled');
+      });
+      
+      // Remove scanning disabled class
+      document.querySelector('.results-table')?.classList.remove('scanning-disabled');
+      
+      // Reset selected state on rows
+      document.querySelectorAll('.table-row.sub-row').forEach(row => {
+        row.classList.remove('selected');
+      });
+    }
+    
+    /**
+     * Guard function - prevents checkbox changes during scanning
+     */
+    function isInteractionAllowed() {
+      return scanState === 'completed';
+    }
+    
+    // ============================================
+    // ANIMATED COUNTER SYSTEM
+    // ============================================
+    /**
+     * Animate a counter from start to end value using requestAnimationFrame.
+     * Uses non-linear easing for natural feel.
+     * 
+     * @param {HTMLElement} element - The element to update
+     * @param {number} startValue - Starting value
+     * @param {number} endValue - Target value
+     * @param {number} duration - Animation duration in ms
+     * @param {function} formatter - Function to format the displayed value
+     * @param {function} easingFn - Easing function to use
+     */
+    function animateCounter(element, startValue, endValue, duration, formatter, easingFn = easeInOutCubic) {
+      if (!element) return;
+      
+      const startTime = performance.now();
+      
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Apply easing for non-linear speed
+        const easedProgress = easingFn(progress);
+        
+        // Calculate current value
+        const currentValue = startValue + (endValue - startValue) * easedProgress;
+        
+        // Update display
+        element.textContent = formatter(currentValue);
+        
+        // Continue animation if not complete
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+      
+      requestAnimationFrame(update);
+    }
+    
+    // ============================================
+    // PROGRESS BAR ANIMATION
+    // ============================================
+    /**
+     * Animate the progress bar fill
+     */
+    function animateProgressBar(duration) {
+      if (!progressFill) return;
+      
+      progressFill.style.transition = `width ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+      progressFill.style.width = '0%';
+      
+      // Force reflow
+      progressFill.offsetWidth;
+      
+      // Start animation
+      progressFill.style.width = '100%';
+    }
+    
+    // ============================================
+    // SCAN SIMULATION
+    // ============================================
+    /**
+     * Start the scanning simulation.
+     * This is the main entry point for the scan process.
+     */
+    function startScan() {
+      if (scanState === 'scanning') return;
+      
+      // Update state
+      scanState = 'scanning';
+      
+      // Disable all checkboxes immediately
+      disableAllCheckboxes();
+      
+      // Reset all counter displays to 0
+      resetCounterDisplays();
+      
+      // Update bottom panel UI
+      updateBottomPanelScanning();
+      
+      // Start progress bar animation
+      animateProgressBar(SCAN_DURATION);
+      
+      // Start animating all counters
+      animateAllCounters();
+      
+      // Schedule scan completion
+      setTimeout(() => {
+        completeScan();
+      }, SCAN_DURATION);
+    }
+    
+    /**
+     * Reset all counter displays to initial state
+     */
+    function resetCounterDisplays() {
+      // Safari
+      const safariTotalSize = document.getElementById('safari-total-size');
+      const safariTotalItems = document.getElementById('safari-total-items');
+      const safariCacheSize = document.getElementById('safari-cache-size');
+      const safariCacheItems = document.getElementById('safari-cache-items');
+      const safariCookiesSize = document.getElementById('safari-cookies-size');
+      const safariCookiesItems = document.getElementById('safari-cookies-items');
+      const safariHistorySize = document.getElementById('safari-history-size');
+      const safariHistoryItems = document.getElementById('safari-history-items');
+      
+      // Reset to 0
+      [safariTotalSize, safariCacheSize, safariCookiesSize, safariHistorySize].forEach(el => {
+        if (el) el.textContent = '0 MB';
+      });
+      [safariTotalItems, safariCacheItems, safariCookiesItems, safariHistoryItems].forEach(el => {
+        if (el) el.textContent = '0';
+      });
+    }
+    
+    /**
+     * Animate all browser counters simultaneously
+     */
+    function animateAllCounters() {
+      const browsers = SCAN_TARGETS.browsers;
+      
+      // Safari counters
+      animateCounter(
+        document.getElementById('safari-total-size'),
+        0, browsers.safari.total.size,
+        SCAN_DURATION, formatSize
+      );
+      animateCounter(
+        document.getElementById('safari-total-items'),
+        0, browsers.safari.total.items,
+        SCAN_DURATION, formatNumber
+      );
+      
+      // Safari sub-items (with staggered delays for visual effect)
+      setTimeout(() => {
+        animateCounter(
+          document.getElementById('safari-cache-size'),
+          0, browsers.safari.cache.size,
+          SCAN_DURATION - 500, formatSize
+        );
+        animateCounter(
+          document.getElementById('safari-cache-items'),
+          0, browsers.safari.cache.items,
+          SCAN_DURATION - 500, formatNumber
+        );
+      }, 300);
+      
+      setTimeout(() => {
+        animateCounter(
+          document.getElementById('safari-cookies-size'),
+          0, browsers.safari.cookies.size,
+          SCAN_DURATION - 800, formatSize
+        );
+        animateCounter(
+          document.getElementById('safari-cookies-items'),
+          0, browsers.safari.cookies.items,
+          SCAN_DURATION - 800, formatNumber
+        );
+      }, 600);
+      
+      setTimeout(() => {
+        animateCounter(
+          document.getElementById('safari-history-size'),
+          0, browsers.safari.history.size,
+          SCAN_DURATION - 1100, formatSize
+        );
+        animateCounter(
+          document.getElementById('safari-history-items'),
+          0, browsers.safari.history.items,
+          SCAN_DURATION - 1100, formatNumber
+        );
+      }, 900);
+      
+      // Chrome and Firefox static values (update at end)
+      // These are already set in HTML, we'll just ensure they display
+    }
+    
+    /**
+     * Update bottom panel to show scanning state
+     */
+    function updateBottomPanelScanning() {
+      if (panelTitle) panelTitle.textContent = 'Scanning your browsers...';
+      if (panelSubtitle) panelSubtitle.textContent = 'This may take a few seconds.';
+      if (spinner) spinner.classList.add('active');
+      if (stopScanBtn) {
+        stopScanBtn.textContent = 'Stop';
+        stopScanBtn.disabled = false;
+      }
+      bottomPanel?.classList.remove('scan-completed');
+      bottomPanel?.classList.add('scanning');
+    }
+    
+    /**
+     * Complete the scan and transition to completed state
+     */
+    function completeScan() {
+      // Update state
+      scanState = 'completed';
+      
+      // Enable all checkboxes (start unselected)
+      enableAllCheckboxes();
+      
+      // Update bottom panel UI
+      updateBottomPanelCompleted();
+      
+      // Expand Safari row to show results
+      expandSafariRow();
+    }
+    
+    /**
+     * Update bottom panel to show completed state
+     */
+    function updateBottomPanelCompleted() {
+      if (panelTitle) panelTitle.textContent = 'Scan completed';
+      if (panelSubtitle) {
+        const totalSize = formatSize(SCAN_TARGETS.totalSize);
+        const totalItems = formatNumber(SCAN_TARGETS.totalItems);
+        panelSubtitle.textContent = `Found ${totalSize} in ${totalItems} items`;
+      }
+      if (spinner) spinner.classList.remove('active');
+      if (stopScanBtn) {
+        stopScanBtn.textContent = 'Clean';
+        stopScanBtn.classList.remove('btn-secondary');
+        stopScanBtn.classList.add('btn-primary');
+      }
+      bottomPanel?.classList.remove('scanning');
+      bottomPanel?.classList.add('scan-completed');
+    }
+    
+    /**
+     * Expand Safari row to show sub-items
+     */
+    function expandSafariRow() {
+      const safariGroup = document.querySelector('.browser-row-group[data-browser="safari"]');
+      if (safariGroup) {
+        const expandableRow = safariGroup.querySelector('.table-row.expandable');
+        const subRows = safariGroup.querySelector('.sub-rows');
+        expandableRow?.classList.add('expanded');
+        subRows?.classList.add('expanded');
+      }
+    }
+    
+    /**
+     * Stop the scan prematurely
+     */
+    function stopScan() {
+      if (scanState !== 'scanning') return;
+      
+      // Complete immediately
+      completeScan();
+    }
+    
+    // ============================================
+    // MENU STATE
+    // ============================================
     // Always keep menu collapsed
     mainMenu.classList.add('collapsed');
     appWindow.classList.add('menu-collapsed');
     
-    // Function to show scanning view
+    // ============================================
+    // VIEW TRANSITIONS
+    // ============================================
     function showScanningView() {
       viewInitial.classList.remove('active');
       viewScanning.classList.add('active');
+      
+      // Auto-start scan when view loads
+      setTimeout(() => {
+        startScan();
+      }, 100);
     }
     
-    // Function to show initial view
     function showInitialView() {
       viewScanning.classList.remove('active');
       viewInitial.classList.add('active');
+      
+      // Reset scan state
+      scanState = 'idle';
+      if (progressFill) progressFill.style.width = '0%';
     }
+    
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
     
     // Start Scan button
     startScanBtn.addEventListener('click', showScanningView);
     
     // Stop Scan button
-    stopScanBtn.addEventListener('click', showInitialView);
+    stopScanBtn.addEventListener('click', () => {
+      if (scanState === 'scanning') {
+        stopScan();
+      } else if (scanState === 'completed') {
+        // Clean action - could show confirmation
+        alert('Cleaning selected items...');
+      }
+    });
     
     // Back button
     backBtn.addEventListener('click', showInitialView);
     
-    // Expand/Collapse functionality
+    // ============================================
+    // EXPAND/COLLAPSE FUNCTIONALITY
+    // ============================================
     expandableRows.forEach(row => {
       const expandIcon = row.querySelector('.expand-icon');
       if (expandIcon) {
         expandIcon.addEventListener('click', (e) => {
           e.stopPropagation();
+          
+          // Guard: Only allow interaction when scan is complete
+          if (!isInteractionAllowed()) return;
+          
           const group = row.closest('.browser-row-group');
           const subRows = group.querySelector('.sub-rows');
           
@@ -2186,9 +2671,21 @@
       }
     });
     
+    // ============================================
+    // CHECKBOX INTERACTION HANDLERS
+    // (All guarded by isInteractionAllowed)
+    // ============================================
+    
     // Browser checkbox - select/deselect all sub-items
     browserCheckboxes.forEach(checkbox => {
       checkbox.addEventListener('change', (e) => {
+        // Guard: Prevent changes during scanning
+        if (!isInteractionAllowed()) {
+          e.preventDefault();
+          checkbox.checked = !checkbox.checked;
+          return;
+        }
+        
         e.stopPropagation();
         const browser = checkbox.dataset.browser;
         const group = checkbox.closest('.browser-row-group');
@@ -2208,7 +2705,7 @@
           }
         });
         
-        // Update parent row selected state
+        // Expand if selecting
         const parentRow = group.querySelector('.table-row.expandable');
         if (checkbox.checked) {
           parentRow.classList.add('expanded');
@@ -2222,6 +2719,13 @@
     // Sub-checkbox change handler
     document.querySelectorAll('.sub-checkbox').forEach(subCb => {
       subCb.addEventListener('change', (e) => {
+        // Guard: Prevent changes during scanning
+        if (!isInteractionAllowed()) {
+          e.preventDefault();
+          subCb.checked = !subCb.checked;
+          return;
+        }
+        
         const subRow = subCb.closest('.table-row.sub-row');
         const group = subCb.closest('.browser-row-group');
         const browserCheckbox = group.querySelector('.browser-checkbox');
@@ -2257,6 +2761,13 @@
     
     // Select All checkbox functionality
     selectAllCheckbox.addEventListener('change', (e) => {
+      // Guard: Prevent changes during scanning
+      if (!isInteractionAllowed()) {
+        e.preventDefault();
+        selectAllCheckbox.checked = !selectAllCheckbox.checked;
+        return;
+      }
+      
       browserCheckboxes.forEach(checkbox => {
         checkbox.checked = e.target.checked;
         checkbox.indeterminate = false;
@@ -2279,207 +2790,6 @@
         });
       });
     });
-
-    // ============================================
-    // LIVE SAFARI SCANNER INTEGRATION
-    // ============================================
-    
-    let eventSource = null;
-    let isScanning = false;
-    
-    // Animated counter function
-    function animateValue(element, start, end, duration, suffix = '') {
-      const startTime = performance.now();
-      const update = (currentTime) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-        const current = Math.floor(start + (end - start) * easeOutQuart);
-        element.textContent = current.toLocaleString() + suffix;
-        if (progress < 1) {
-          requestAnimationFrame(update);
-        }
-      };
-      requestAnimationFrame(update);
-    }
-    
-    // Format bytes to human readable
-    function formatSize(bytes) {
-      if (bytes === 0) return '0 B';
-      const k = 1024;
-      const sizes = ['B', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
-    
-    // Start live scanning
-    function startLiveScan() {
-      if (isScanning) return;
-      isScanning = true;
-      
-      // Reset values to show scanning
-      const elements = [
-        'safari-total-size', 'safari-total-items',
-        'safari-cache-size', 'safari-cache-items',
-        'safari-cookies-size', 'safari-cookies-items',
-        'safari-history-size', 'safari-history-items'
-      ];
-      elements.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = '--';
-      });
-      
-      // Connect to SSE endpoint
-      eventSource = new EventSource('http://localhost:3001/api/scan');
-      
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === 'progress') {
-          // Update individual category
-          const category = data.category;
-          const categoryMap = {
-            'cache': { size: 'safari-cache-size', items: 'safari-cache-items' },
-            'cookies': { size: 'safari-cookies-size', items: 'safari-cookies-items' },
-            'history': { size: 'safari-history-size', items: 'safari-history-items' },
-            'localStorage': { size: 'safari-cache-size', items: 'safari-cache-items' },
-            'databases': { size: 'safari-cache-size', items: 'safari-cache-items' }
-          };
-          
-          if (categoryMap[category]) {
-            const sizeEl = document.getElementById(categoryMap[category].size);
-            const itemsEl = document.getElementById(categoryMap[category].items);
-            
-            if (sizeEl && category === 'cache') {
-              animateValue(sizeEl, 0, data.size / (1024 * 1024), 500, ' MB');
-            }
-            if (itemsEl && category === 'cache') {
-              animateValue(itemsEl, 0, data.items, 500, '');
-            }
-            if (category === 'cookies') {
-              animateValue(sizeEl, 0, data.size / (1024 * 1024), 500, ' MB');
-              animateValue(itemsEl, 0, data.items, 500, '');
-            }
-            if (category === 'history') {
-              animateValue(sizeEl, 0, data.size / (1024 * 1024), 500, ' MB');
-              animateValue(itemsEl, 0, data.items, 500, '');
-            }
-          }
-        }
-        
-        if (data.type === 'complete') {
-          // Update total Safari row with animated counters
-          const totalSizeEl = document.getElementById('safari-total-size');
-          const totalItemsEl = document.getElementById('safari-total-items');
-          
-          const totalBytes = data.totalSize;
-          const totalItems = data.totalItems;
-          
-          // Animate totals
-          const totalMB = totalBytes / (1024 * 1024);
-          animateValue(totalSizeEl, 0, Math.round(totalMB), 800, ' MB');
-          animateValue(totalItemsEl, 0, totalItems, 800, '');
-          
-          // Update category breakdowns
-          if (data.categories) {
-            const cacheSize = document.getElementById('safari-cache-size');
-            const cacheItems = document.getElementById('safari-cache-items');
-            const cookiesSize = document.getElementById('safari-cookies-size');
-            const cookiesItems = document.getElementById('safari-cookies-items');
-            const historySize = document.getElementById('safari-history-size');
-            const historyItems = document.getElementById('safari-history-items');
-            
-            // Cache (combine cache + localStorage + databases)
-            const cacheTotal = (data.categories.cache?.size || 0) + 
-                              (data.categories.localStorage?.size || 0) + 
-                              (data.categories.databases?.size || 0);
-            const cacheItemsTotal = (data.categories.cache?.items || 0) + 
-                                   (data.categories.localStorage?.items || 0) + 
-                                   (data.categories.databases?.items || 0);
-            
-            animateValue(cacheSize, 0, Math.round(cacheTotal / (1024 * 1024)), 600, ' MB');
-            animateValue(cacheItems, 0, cacheItemsTotal, 600, '');
-            
-            // Cookies
-            const cookiesTotal = data.categories.cookies?.size || 0;
-            const cookiesItemsTotal = data.categories.cookies?.items || 0;
-            animateValue(cookiesSize, 0, Math.round(cookiesTotal / (1024 * 1024)), 600, ' MB');
-            animateValue(cookiesItems, 0, cookiesItemsTotal, 600, '');
-            
-            // History
-            const historyTotal = data.categories.history?.size || 0;
-            const historyItemsTotal = data.categories.history?.items || 0;
-            animateValue(historySize, 0, Math.round(historyTotal / (1024 * 1024)), 600, ' MB');
-            animateValue(historyItems, 0, historyItemsTotal, 600, '');
-          }
-          
-          isScanning = false;
-          eventSource.close();
-        }
-      };
-      
-      eventSource.onerror = () => {
-        console.log('Scanner backend not available - using simulated data');
-        eventSource.close();
-        runSimulatedScan();
-      };
-    }
-    
-    // Simulated scan for when backend is not available
-    function runSimulatedScan() {
-      const simulatedData = {
-        cache: { size: 307 * 1024 * 1024, items: 987 },
-        cookies: { size: 405 * 1024 * 1024, items: 87 },
-        history: { size: 26 * 1024 * 1024, items: 7 }
-      };
-      
-      let delay = 0;
-      
-      // Animate each category
-      Object.keys(simulatedData).forEach((category, index) => {
-        setTimeout(() => {
-          const sizeEl = document.getElementById(`safari-${category}-size`);
-          const itemsEl = document.getElementById(`safari-${category}-items`);
-          
-          const sizeMB = Math.round(simulatedData[category].size / (1024 * 1024));
-          animateValue(sizeEl, 0, sizeMB, 600, ' MB');
-          animateValue(itemsEl, 0, simulatedData[category].items, 600, '');
-        }, delay);
-        delay += 400;
-      });
-      
-      // Calculate and animate totals
-      setTimeout(() => {
-        const totalSizeEl = document.getElementById('safari-total-size');
-        const totalItemsEl = document.getElementById('safari-total-items');
-        
-        const totalSize = Object.values(simulatedData).reduce((sum, cat) => sum + cat.size, 0);
-        const totalItems = Object.values(simulatedData).reduce((sum, cat) => sum + cat.items, 0);
-        
-        animateValue(totalSizeEl, 0, Math.round(totalSize / (1024 * 1024)), 800, ' MB');
-        animateValue(totalItemsEl, 0, totalItems, 800, '');
-        
-        isScanning = false;
-      }, delay + 200);
-    }
-    
-    // Stop scanning
-    function stopLiveScan() {
-      if (eventSource) {
-        eventSource.close();
-        eventSource = null;
-      }
-      isScanning = false;
-    }
-    
-    // Hook into existing scan buttons
-    const originalShowScanningView = showScanningView;
-    showScanningView = function() {
-      originalShowScanningView();
-      startLiveScan();
-    };
-    
-    stopScanBtn.addEventListener('click', stopLiveScan);
   </script>
 </body>
 </html>
