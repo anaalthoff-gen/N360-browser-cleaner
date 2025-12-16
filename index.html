@@ -1306,6 +1306,23 @@
       font-weight: 500;
     }
     
+    /* Animated counter styles */
+    .cell-size.scanning,
+    .cell-items.scanning {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .cell-size,
+    .cell-items {
+      transition: color 0.3s ease;
+      font-variant-numeric: tabular-nums;
+    }
+    
     .table-row.sub-row .cell-actions {
       flex: 1;
     }
@@ -1839,8 +1856,8 @@
                   </div>
                   <span class="browser-name">Safari</span>
                 </div>
-                <div class="cell-size">930 MB</div>
-                <div class="cell-items">740</div>
+                <div class="cell-size" id="safari-total-size">-- MB</div>
+                <div class="cell-items" id="safari-total-items">--</div>
                 <div class="cell-actions">
                   <div class="expand-icon">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1866,8 +1883,8 @@
                       </svg>
                     </span>
                   </div>
-                  <div class="cell-size">307 MB</div>
-                  <div class="cell-items">987</div>
+                  <div class="cell-size" id="safari-cache-size">-- MB</div>
+                  <div class="cell-items" id="safari-cache-items">--</div>
                   <div class="cell-actions"></div>
                 </div>
                 <div class="table-row sub-row selected">
@@ -1881,12 +1898,12 @@
                     <span class="item-name">Browsing cookies</span>
                     <span class="info-icon" title="Small files websites use to remember you">
                       <svg viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
                       </svg>
                     </span>
                   </div>
-                  <div class="cell-size">405 MB</div>
-                  <div class="cell-items">87</div>
+                  <div class="cell-size" id="safari-cookies-size">-- MB</div>
+                  <div class="cell-items" id="safari-cookies-items">--</div>
                   <div class="cell-actions"></div>
                 </div>
                 <div class="table-row sub-row selected">
@@ -1900,12 +1917,12 @@
                     <span class="item-name">Website history</span>
                     <span class="info-icon" title="Record of websites you've visited">
                       <svg viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
                       </svg>
                     </span>
                   </div>
-                  <div class="cell-size">26 MB</div>
-                  <div class="cell-items">7</div>
+                  <div class="cell-size" id="safari-history-size">-- MB</div>
+                  <div class="cell-items" id="safari-history-items">--</div>
                   <div class="cell-actions"></div>
                 </div>
               </div>
@@ -2262,6 +2279,207 @@
         });
       });
     });
+
+    // ============================================
+    // LIVE SAFARI SCANNER INTEGRATION
+    // ============================================
+    
+    let eventSource = null;
+    let isScanning = false;
+    
+    // Animated counter function
+    function animateValue(element, start, end, duration, suffix = '') {
+      const startTime = performance.now();
+      const update = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const current = Math.floor(start + (end - start) * easeOutQuart);
+        element.textContent = current.toLocaleString() + suffix;
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      };
+      requestAnimationFrame(update);
+    }
+    
+    // Format bytes to human readable
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    // Start live scanning
+    function startLiveScan() {
+      if (isScanning) return;
+      isScanning = true;
+      
+      // Reset values to show scanning
+      const elements = [
+        'safari-total-size', 'safari-total-items',
+        'safari-cache-size', 'safari-cache-items',
+        'safari-cookies-size', 'safari-cookies-items',
+        'safari-history-size', 'safari-history-items'
+      ];
+      elements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '--';
+      });
+      
+      // Connect to SSE endpoint
+      eventSource = new EventSource('http://localhost:3001/api/scan');
+      
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'progress') {
+          // Update individual category
+          const category = data.category;
+          const categoryMap = {
+            'cache': { size: 'safari-cache-size', items: 'safari-cache-items' },
+            'cookies': { size: 'safari-cookies-size', items: 'safari-cookies-items' },
+            'history': { size: 'safari-history-size', items: 'safari-history-items' },
+            'localStorage': { size: 'safari-cache-size', items: 'safari-cache-items' },
+            'databases': { size: 'safari-cache-size', items: 'safari-cache-items' }
+          };
+          
+          if (categoryMap[category]) {
+            const sizeEl = document.getElementById(categoryMap[category].size);
+            const itemsEl = document.getElementById(categoryMap[category].items);
+            
+            if (sizeEl && category === 'cache') {
+              animateValue(sizeEl, 0, data.size / (1024 * 1024), 500, ' MB');
+            }
+            if (itemsEl && category === 'cache') {
+              animateValue(itemsEl, 0, data.items, 500, '');
+            }
+            if (category === 'cookies') {
+              animateValue(sizeEl, 0, data.size / (1024 * 1024), 500, ' MB');
+              animateValue(itemsEl, 0, data.items, 500, '');
+            }
+            if (category === 'history') {
+              animateValue(sizeEl, 0, data.size / (1024 * 1024), 500, ' MB');
+              animateValue(itemsEl, 0, data.items, 500, '');
+            }
+          }
+        }
+        
+        if (data.type === 'complete') {
+          // Update total Safari row with animated counters
+          const totalSizeEl = document.getElementById('safari-total-size');
+          const totalItemsEl = document.getElementById('safari-total-items');
+          
+          const totalBytes = data.totalSize;
+          const totalItems = data.totalItems;
+          
+          // Animate totals
+          const totalMB = totalBytes / (1024 * 1024);
+          animateValue(totalSizeEl, 0, Math.round(totalMB), 800, ' MB');
+          animateValue(totalItemsEl, 0, totalItems, 800, '');
+          
+          // Update category breakdowns
+          if (data.categories) {
+            const cacheSize = document.getElementById('safari-cache-size');
+            const cacheItems = document.getElementById('safari-cache-items');
+            const cookiesSize = document.getElementById('safari-cookies-size');
+            const cookiesItems = document.getElementById('safari-cookies-items');
+            const historySize = document.getElementById('safari-history-size');
+            const historyItems = document.getElementById('safari-history-items');
+            
+            // Cache (combine cache + localStorage + databases)
+            const cacheTotal = (data.categories.cache?.size || 0) + 
+                              (data.categories.localStorage?.size || 0) + 
+                              (data.categories.databases?.size || 0);
+            const cacheItemsTotal = (data.categories.cache?.items || 0) + 
+                                   (data.categories.localStorage?.items || 0) + 
+                                   (data.categories.databases?.items || 0);
+            
+            animateValue(cacheSize, 0, Math.round(cacheTotal / (1024 * 1024)), 600, ' MB');
+            animateValue(cacheItems, 0, cacheItemsTotal, 600, '');
+            
+            // Cookies
+            const cookiesTotal = data.categories.cookies?.size || 0;
+            const cookiesItemsTotal = data.categories.cookies?.items || 0;
+            animateValue(cookiesSize, 0, Math.round(cookiesTotal / (1024 * 1024)), 600, ' MB');
+            animateValue(cookiesItems, 0, cookiesItemsTotal, 600, '');
+            
+            // History
+            const historyTotal = data.categories.history?.size || 0;
+            const historyItemsTotal = data.categories.history?.items || 0;
+            animateValue(historySize, 0, Math.round(historyTotal / (1024 * 1024)), 600, ' MB');
+            animateValue(historyItems, 0, historyItemsTotal, 600, '');
+          }
+          
+          isScanning = false;
+          eventSource.close();
+        }
+      };
+      
+      eventSource.onerror = () => {
+        console.log('Scanner backend not available - using simulated data');
+        eventSource.close();
+        runSimulatedScan();
+      };
+    }
+    
+    // Simulated scan for when backend is not available
+    function runSimulatedScan() {
+      const simulatedData = {
+        cache: { size: 307 * 1024 * 1024, items: 987 },
+        cookies: { size: 405 * 1024 * 1024, items: 87 },
+        history: { size: 26 * 1024 * 1024, items: 7 }
+      };
+      
+      let delay = 0;
+      
+      // Animate each category
+      Object.keys(simulatedData).forEach((category, index) => {
+        setTimeout(() => {
+          const sizeEl = document.getElementById(`safari-${category}-size`);
+          const itemsEl = document.getElementById(`safari-${category}-items`);
+          
+          const sizeMB = Math.round(simulatedData[category].size / (1024 * 1024));
+          animateValue(sizeEl, 0, sizeMB, 600, ' MB');
+          animateValue(itemsEl, 0, simulatedData[category].items, 600, '');
+        }, delay);
+        delay += 400;
+      });
+      
+      // Calculate and animate totals
+      setTimeout(() => {
+        const totalSizeEl = document.getElementById('safari-total-size');
+        const totalItemsEl = document.getElementById('safari-total-items');
+        
+        const totalSize = Object.values(simulatedData).reduce((sum, cat) => sum + cat.size, 0);
+        const totalItems = Object.values(simulatedData).reduce((sum, cat) => sum + cat.items, 0);
+        
+        animateValue(totalSizeEl, 0, Math.round(totalSize / (1024 * 1024)), 800, ' MB');
+        animateValue(totalItemsEl, 0, totalItems, 800, '');
+        
+        isScanning = false;
+      }, delay + 200);
+    }
+    
+    // Stop scanning
+    function stopLiveScan() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      isScanning = false;
+    }
+    
+    // Hook into existing scan buttons
+    const originalShowScanningView = showScanningView;
+    showScanningView = function() {
+      originalShowScanningView();
+      startLiveScan();
+    };
+    
+    stopScanBtn.addEventListener('click', stopLiveScan);
   </script>
 </body>
 </html>
