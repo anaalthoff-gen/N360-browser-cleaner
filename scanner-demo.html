@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safari Storage Scanner</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #242424;
+      --bg-card: #2a2a2a;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --accent: #0e68dd;
+      --accent-light: rgba(14, 104, 221, 0.15);
+      --success: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .scanner-container {
+      width: 100%;
+      max-width: 600px;
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .safari-icon {
+      width: 40px;
+      height: 40px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    /* Main Stats Display */
+    .main-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -10px rgba(14, 104, 221, 0.3);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 42px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-unit {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-left: 4px;
+    }
+
+    /* Progress Section */
+    .progress-section {
+      margin-bottom: 30px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .progress-label {
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-percent {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #3b82f6);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .current-file {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 18px;
+    }
+
+    /* Categories */
+    .categories {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .category-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      opacity: 0.5;
+      transition: all 0.3s ease;
+    }
+
+    .category-item.active {
+      opacity: 1;
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .category-item.complete {
+      opacity: 1;
+    }
+
+    .category-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .category-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .category-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .category-right {
+      text-align: right;
+    }
+
+    .category-size {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .category-items {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Scan Button */
+    .scan-button {
+      width: 100%;
+      padding: 16px 32px;
+      margin-top: 30px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .scan-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -10px var(--accent);
+    }
+
+    .scan-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .scan-button svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Complete State */
+    .complete-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--success);
+      border-radius: 8px;
+      color: var(--success);
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 20px;
+    }
+
+    .complete-badge.show {
+      display: flex;
+    }
+
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 30px;
+    }
+
+    .mode-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      color: var(--text-primary);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .mode-btn:hover:not(.active) {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    /* Animated Number */
+    @keyframes countUp {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    .counting {
+      animation: countUp 0.1s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanner-container">
+    <div class="header">
+      <h1>
+        <svg class="safari-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15.6848 6.4178C16.8575 6.02692 17.9731 7.14253 17.5822 8.31516L15.7398 13.8424C15.4412 14.7382 14.7382 15.4412 13.8424 15.7398L8.31516 17.5822C7.14252 17.9731 6.02692 16.8575 6.4178 15.6848L8.26022 10.1576C8.55882 9.26177 9.26177 8.55882 10.1576 8.26021L15.6848 6.4178ZM12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" fill="white"/>
+          <path d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4Z" fill="white"/>
+        </svg>
+        Safari Storage Scanner
+      </h1>
+      <p>Real-time analysis of Safari browser data</p>
+    </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="demo">Demo Mode</button>
+      <button class="mode-btn" data-mode="live">Live Scan</button>
+    </div>
+
+    <div class="main-stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Size</div>
+        <div class="stat-value">
+          <span id="totalSize">0</span>
+          <span class="stat-unit" id="sizeUnit">MB</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Items</div>
+        <div class="stat-value">
+          <span id="totalItems">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-header">
+        <div class="progress-label">
+          <div class="progress-spinner" id="spinner" style="display: none;"></div>
+          <span id="progressText">Ready to scan</span>
+        </div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="current-file" id="currentFile"></div>
+    </div>
+
+    <div class="categories">
+      <div class="category-item" data-category="cache">
+        <div class="category-left">
+          <div class="category-icon">📦</div>
+          <div class="category-name">Browser Cache</div>
+        </div>
+        <div class="category-right">
+          <div class="category-size" id="cacheSize">-</div>
+          <div class="category-items" id="cacheItems">-</div>
+        </div>
+      </div>
+      <div class="category-item" data-category="cookies">
+        <div class="category-left">
+          <div class="category-icon">🍪</div>
+          <div class="category-name">Browsing Cookies</div>
+        </div>
+        <div class="category-right">
+          <div class="category-size" id="cookiesSize">-</div>
+          <div class="category-items" id="cookiesItems">-</div>
+        </div>
+      </div>
+      <div class="category-item" data-category="history">
+        <div class="category-left">
+          <div class="category-icon">📜</div>
+          <div class="category-name">Website History</div>
+        </div>
+        <div class="category-right">
+          <div class="category-size" id="historySize">-</div>
+          <div class="category-items" id="historyItems">-</div>
+        </div>
+      </div>
+      <div class="category-item" data-category="localStorage">
+        <div class="category-left">
+          <div class="category-icon">💾</div>
+          <div class="category-name">Local Storage</div>
+        </div>
+        <div class="category-right">
+          <div class="category-size" id="localStorageSize">-</div>
+          <div class="category-items" id="localStorageItems">-</div>
+        </div>
+      </div>
+      <div class="category-item" data-category="databases">
+        <div class="category-left">
+          <div class="category-icon">🗄️</div>
+          <div class="category-name">Web Databases</div>
+        </div>
+        <div class="category-right">
+          <div class="category-size" id="databasesSize">-</div>
+          <div class="category-items" id="databasesItems">-</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="scan-button" id="scanBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      Start Scanning
+    </button>
+
+    <div class="complete-badge" id="completeBadge">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+      Scan Complete
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const totalSizeEl = document.getElementById('totalSize');
+    const sizeUnitEl = document.getElementById('sizeUnit');
+    const totalItemsEl = document.getElementById('totalItems');
+    const progressTextEl = document.getElementById('progressText');
+    const progressPercentEl = document.getElementById('progressPercent');
+    const progressFillEl = document.getElementById('progressFill');
+    const currentFileEl = document.getElementById('currentFile');
+    const spinnerEl = document.getElementById('spinner');
+    const scanBtn = document.getElementById('scanBtn');
+    const completeBadge = document.getElementById('completeBadge');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+
+    let currentMode = 'demo';
+    let isScanning = false;
+
+    // Mode toggle
+    modeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        modeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMode = btn.dataset.mode;
+      });
+    });
+
+    // Animated counter
+    function animateNumber(element, start, end, duration, formatter = (n) => n) {
+      const startTime = performance.now();
+      const diff = end - start;
+      
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-out-cubic)
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        
+        const current = start + (diff * easeProgress);
+        element.textContent = formatter(Math.round(current));
+        element.classList.add('counting');
+        
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          element.classList.remove('counting');
+        }
+      }
+      
+      requestAnimationFrame(update);
+    }
+
+    // Format bytes
+    function formatBytes(bytes) {
+      if (bytes < 1024) return { value: bytes, unit: 'B' };
+      if (bytes < 1024 * 1024) return { value: (bytes / 1024).toFixed(1), unit: 'KB' };
+      if (bytes < 1024 * 1024 * 1024) return { value: (bytes / (1024 * 1024)).toFixed(1), unit: 'MB' };
+      return { value: (bytes / (1024 * 1024 * 1024)).toFixed(2), unit: 'GB' };
+    }
+
+    // Format number with commas
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // Update category display
+    function updateCategory(category, size, items, isActive = false, isComplete = false) {
+      const el = document.querySelector(`[data-category="${category}"]`);
+      const sizeEl = document.getElementById(`${category}Size`);
+      const itemsEl = document.getElementById(`${category}Items`);
+      
+      if (isActive) {
+        el.classList.add('active');
+        el.classList.remove('complete');
+      } else if (isComplete) {
+        el.classList.remove('active');
+        el.classList.add('complete');
+      }
+      
+      const formatted = formatBytes(size);
+      sizeEl.textContent = `${formatted.value} ${formatted.unit}`;
+      itemsEl.textContent = `${formatNumber(items)} items`;
+    }
+
+    // Demo data for simulation
+    const demoData = {
+      cache: { targetSize: 307 * 1024 * 1024, targetItems: 987 },
+      cookies: { targetSize: 405 * 1024 * 1024, targetItems: 87 },
+      history: { targetSize: 26 * 1024 * 1024, targetItems: 7 },
+      localStorage: { targetSize: 156 * 1024 * 1024, targetItems: 234 },
+      databases: { targetSize: 36 * 1024 * 1024, targetItems: 12 }
+    };
+
+    // Run demo scan
+    async function runDemoScan() {
+      const categories = ['cache', 'cookies', 'history', 'localStorage', 'databases'];
+      let totalSize = 0;
+      let totalItems = 0;
+      
+      for (let i = 0; i < categories.length; i++) {
+        const category = categories[i];
+        const data = demoData[category];
+        
+        // Update progress
+        progressTextEl.textContent = `Scanning ${category}...`;
+        progressFillEl.style.width = `${((i + 0.5) / categories.length) * 100}%`;
+        progressPercentEl.textContent = `${Math.round(((i + 0.5) / categories.length) * 100)}%`;
+        
+        // Mark category as active
+        updateCategory(category, 0, 0, true, false);
+        
+        // Simulate scanning with incremental updates
+        const steps = 20;
+        for (let step = 0; step <= steps; step++) {
+          await new Promise(r => setTimeout(r, 50));
+          
+          const currentSize = Math.round((data.targetSize / steps) * step);
+          const currentItems = Math.round((data.targetItems / steps) * step);
+          
+          updateCategory(category, currentSize, currentItems, true, false);
+          
+          // Update totals with animation
+          const newTotalSize = totalSize + currentSize;
+          const newTotalItems = totalItems + currentItems;
+          
+          const formatted = formatBytes(newTotalSize);
+          totalSizeEl.textContent = formatted.value;
+          sizeUnitEl.textContent = formatted.unit;
+          totalItemsEl.textContent = formatNumber(newTotalItems);
+          
+          // Random file names
+          const files = ['Cache.db', 'Cookies.binarycookies', 'History.db', 'LocalStorage', 'WebSQL.db'];
+          currentFileEl.textContent = `Reading: ${files[Math.floor(Math.random() * files.length)]}`;
+        }
+        
+        // Mark category as complete
+        totalSize += data.targetSize;
+        totalItems += data.targetItems;
+        updateCategory(category, data.targetSize, data.targetItems, false, true);
+        
+        progressFillEl.style.width = `${((i + 1) / categories.length) * 100}%`;
+        progressPercentEl.textContent = `${Math.round(((i + 1) / categories.length) * 100)}%`;
+      }
+      
+      // Final update with smooth animation
+      const finalFormatted = formatBytes(totalSize);
+      animateNumber(totalSizeEl, parseFloat(totalSizeEl.textContent), parseFloat(finalFormatted.value), 500, (n) => n.toFixed(1));
+      sizeUnitEl.textContent = finalFormatted.unit;
+      animateNumber(totalItemsEl, parseInt(totalItemsEl.textContent.replace(/,/g, '')), totalItems, 500, formatNumber);
+    }
+
+    // Run live scan (requires server)
+    async function runLiveScan() {
+      try {
+        const eventSource = new EventSource('http://localhost:3001/api/scan');
+        
+        eventSource.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'progress') {
+            progressTextEl.textContent = data.message;
+            currentFileEl.textContent = data.message;
+            
+            const formatted = formatBytes(data.size);
+            totalSizeEl.textContent = formatted.value;
+            sizeUnitEl.textContent = formatted.unit;
+            totalItemsEl.textContent = formatNumber(data.items);
+            
+            // Mark active category
+            if (data.scanning) {
+              document.querySelectorAll('.category-item').forEach(el => {
+                el.classList.remove('active');
+              });
+              const activeEl = document.querySelector(`[data-category="${data.scanning}"]`);
+              if (activeEl) activeEl.classList.add('active');
+            }
+          } else if (data.type === 'complete') {
+            eventSource.close();
+            
+            // Update all categories
+            const results = data.results;
+            updateCategory('cache', results.cache.size, results.cache.items, false, true);
+            updateCategory('cookies', results.cookies.size, results.cookies.items, false, true);
+            updateCategory('history', results.history.size, results.history.items, false, true);
+            updateCategory('localStorage', results.localStorage.size, results.localStorage.items, false, true);
+            updateCategory('databases', results.databases.size, results.databases.items, false, true);
+            
+            finishScan();
+          } else if (data.type === 'error') {
+            eventSource.close();
+            alert('Error: ' + data.message + '\n\nMake sure the server is running: cd safari-scanner && npm start');
+            resetScan();
+          }
+        };
+        
+        eventSource.onerror = () => {
+          eventSource.close();
+          alert('Cannot connect to scanner server.\n\nTo use Live Scan:\n1. cd safari-scanner\n2. npm install\n3. npm start');
+          resetScan();
+        };
+      } catch (error) {
+        alert('Error: ' + error.message);
+        resetScan();
+      }
+    }
+
+    // Start scan
+    async function startScan() {
+      if (isScanning) return;
+      isScanning = true;
+      
+      // Reset UI
+      scanBtn.disabled = true;
+      scanBtn.innerHTML = `
+        <div class="progress-spinner"></div>
+        Scanning...
+      `;
+      spinnerEl.style.display = 'block';
+      completeBadge.classList.remove('show');
+      
+      // Reset categories
+      document.querySelectorAll('.category-item').forEach(el => {
+        el.classList.remove('active', 'complete');
+      });
+      document.querySelectorAll('.category-size').forEach(el => el.textContent = '-');
+      document.querySelectorAll('.category-items').forEach(el => el.textContent = '-');
+      
+      // Reset totals
+      totalSizeEl.textContent = '0';
+      sizeUnitEl.textContent = 'MB';
+      totalItemsEl.textContent = '0';
+      progressFillEl.style.width = '0%';
+      progressPercentEl.textContent = '0%';
+      
+      if (currentMode === 'demo') {
+        await runDemoScan();
+        finishScan();
+      } else {
+        await runLiveScan();
+      }
+    }
+
+    function finishScan() {
+      isScanning = false;
+      spinnerEl.style.display = 'none';
+      progressTextEl.textContent = 'Scan complete';
+      currentFileEl.textContent = '';
+      progressFillEl.style.width = '100%';
+      progressPercentEl.textContent = '100%';
+      
+      scanBtn.disabled = false;
+      scanBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+        Scan Again
+      `;
+      
+      completeBadge.classList.add('show');
+    }
+
+    function resetScan() {
+      isScanning = false;
+      spinnerEl.style.display = 'none';
+      progressTextEl.textContent = 'Ready to scan';
+      
+      scanBtn.disabled = false;
+      scanBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+        Start Scanning
+      `;
+    }
+
+    // Event listener
+    scanBtn.addEventListener('click', startScan);
+  </script>
+</body>
+</html>
+
