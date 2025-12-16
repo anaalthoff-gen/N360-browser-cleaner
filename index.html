@@ -1234,6 +1234,82 @@
       fill: #242424;
     }
     
+    /* Expandable Row Styles */
+    .browser-row-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .table-row.expandable {
+      cursor: pointer;
+    }
+    
+    .table-row.expandable.expanded {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .table-row.expandable.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+    
+    /* Sub-rows container */
+    .sub-rows {
+      display: none;
+      flex-direction: column;
+    }
+    
+    .sub-rows.expanded {
+      display: flex;
+    }
+    
+    /* Sub-row styles */
+    .table-row.sub-row {
+      padding-left: 40px;
+    }
+    
+    .table-row.sub-row.selected {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .table-row.sub-row .cell-browser {
+      width: auto;
+      flex: 0 0 auto;
+      min-width: 160px;
+    }
+    
+    .table-row.sub-row .item-name {
+      font-size: 14px;
+      font-weight: 400;
+      color: #242424;
+      line-height: 20px;
+    }
+    
+    .table-row.sub-row .info-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(36, 36, 36, 0.75);
+      cursor: help;
+      margin-left: 4px;
+    }
+    
+    .table-row.sub-row .info-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .table-row.sub-row .cell-size,
+    .table-row.sub-row .cell-items {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .table-row.sub-row .cell-actions {
+      flex: 1;
+    }
+    
     /* Sort Icon */
     .sort-icon {
       width: 20px;
@@ -1736,77 +1812,263 @@
               <div class="cell-actions"></div>
             </div>
 
-            <!-- Safari Row -->
-            <div class="table-row">
-              <div class="cell-checkbox">
-                <label class="checkbox">
-                  <input type="checkbox" class="browser-checkbox">
-                  <span class="checkbox-box"></span>
-                </label>
-              </div>
-              <div class="cell-browser">
-                <div class="browser-icon">
-                  <img src="Assets/icons/ic_24_explore.svg" alt="Safari" width="24" height="24">
+            <!-- Safari Row Group -->
+            <div class="browser-row-group" data-browser="safari">
+              <div class="table-row expandable">
+                <div class="cell-checkbox">
+                  <label class="checkbox">
+                    <input type="checkbox" class="browser-checkbox" data-browser="safari">
+                    <span class="checkbox-box"></span>
+                  </label>
                 </div>
-                <span class="browser-name">Safari</span>
+                <div class="cell-browser">
+                  <div class="browser-icon">
+                    <img src="Assets/icons/ic_24_explore.svg" alt="Safari" width="24" height="24">
+                  </div>
+                  <span class="browser-name">Safari</span>
+                </div>
+                <div class="cell-size">930 MB</div>
+                <div class="cell-items">740</div>
+                <div class="cell-actions">
+                  <div class="expand-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                  </div>
+                </div>
               </div>
-              <div class="cell-size">930 MB</div>
-              <div class="cell-items">740</div>
-              <div class="cell-actions">
-                <div class="expand-icon">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-                  </svg>
+              <!-- Safari Sub-rows -->
+              <div class="sub-rows">
+                <div class="table-row sub-row selected">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="safari" checked>
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Browser cache</span>
+                    <span class="info-icon" title="Temporary files stored by your browser">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">307 MB</div>
+                  <div class="cell-items">987</div>
+                  <div class="cell-actions"></div>
+                </div>
+                <div class="table-row sub-row selected">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="safari" checked>
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Browsing cookies</span>
+                    <span class="info-icon" title="Small files websites use to remember you">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">405 MB</div>
+                  <div class="cell-items">87</div>
+                  <div class="cell-actions"></div>
+                </div>
+                <div class="table-row sub-row selected">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="safari" checked>
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Website history</span>
+                    <span class="info-icon" title="Record of websites you've visited">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">26 MB</div>
+                  <div class="cell-items">7</div>
+                  <div class="cell-actions"></div>
                 </div>
               </div>
             </div>
 
-            <!-- Chrome Row -->
-            <div class="table-row">
-              <div class="cell-checkbox">
-                <label class="checkbox">
-                  <input type="checkbox" class="browser-checkbox">
-                  <span class="checkbox-box"></span>
-                </label>
-              </div>
-              <div class="cell-browser">
-                <div class="browser-icon">
-                  <img src="Assets/icons/ic_24_browser_chrome.svg" alt="Chrome" width="24" height="24">
+            <!-- Chrome Row Group -->
+            <div class="browser-row-group" data-browser="chrome">
+              <div class="table-row expandable">
+                <div class="cell-checkbox">
+                  <label class="checkbox">
+                    <input type="checkbox" class="browser-checkbox" data-browser="chrome">
+                    <span class="checkbox-box"></span>
+                  </label>
                 </div>
-                <span class="browser-name">Google Chrome</span>
+                <div class="cell-browser">
+                  <div class="browser-icon">
+                    <img src="Assets/icons/ic_24_browser_chrome.svg" alt="Chrome" width="24" height="24">
+                  </div>
+                  <span class="browser-name">Google Chrome</span>
+                </div>
+                <div class="cell-size">832 MB</div>
+                <div class="cell-items">1 632</div>
+                <div class="cell-actions">
+                  <div class="expand-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                  </div>
+                </div>
               </div>
-              <div class="cell-size">832 MB</div>
-              <div class="cell-items">1 632</div>
-              <div class="cell-actions">
-                <div class="expand-icon">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-                  </svg>
+              <!-- Chrome Sub-rows -->
+              <div class="sub-rows">
+                <div class="table-row sub-row">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="chrome">
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Browser cache</span>
+                    <span class="info-icon" title="Temporary files stored by your browser">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">450 MB</div>
+                  <div class="cell-items">1 245</div>
+                  <div class="cell-actions"></div>
+                </div>
+                <div class="table-row sub-row">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="chrome">
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Browsing cookies</span>
+                    <span class="info-icon" title="Small files websites use to remember you">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">320 MB</div>
+                  <div class="cell-items">298</div>
+                  <div class="cell-actions"></div>
+                </div>
+                <div class="table-row sub-row">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="chrome">
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Website history</span>
+                    <span class="info-icon" title="Record of websites you've visited">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">62 MB</div>
+                  <div class="cell-items">89</div>
+                  <div class="cell-actions"></div>
                 </div>
               </div>
             </div>
 
-            <!-- Firefox Row -->
-            <div class="table-row">
-              <div class="cell-checkbox">
-                <label class="checkbox">
-                  <input type="checkbox" class="browser-checkbox">
-                  <span class="checkbox-box"></span>
-                </label>
-              </div>
-              <div class="cell-browser">
-                <div class="browser-icon">
-                  <img src="Assets/icons/ic_24_browser_firefox.svg" alt="Firefox" width="24" height="24">
+            <!-- Firefox Row Group -->
+            <div class="browser-row-group" data-browser="firefox">
+              <div class="table-row expandable">
+                <div class="cell-checkbox">
+                  <label class="checkbox">
+                    <input type="checkbox" class="browser-checkbox" data-browser="firefox">
+                    <span class="checkbox-box"></span>
+                  </label>
                 </div>
-                <span class="browser-name">Mozilla Firefox</span>
+                <div class="cell-browser">
+                  <div class="browser-icon">
+                    <img src="Assets/icons/ic_24_browser_firefox.svg" alt="Firefox" width="24" height="24">
+                  </div>
+                  <span class="browser-name">Mozilla Firefox</span>
+                </div>
+                <div class="cell-size">200 MB</div>
+                <div class="cell-items">832</div>
+                <div class="cell-actions">
+                  <div class="expand-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                  </div>
+                </div>
               </div>
-              <div class="cell-size">200 MB</div>
-              <div class="cell-items">832</div>
-              <div class="cell-actions">
-                <div class="expand-icon">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-                  </svg>
+              <!-- Firefox Sub-rows -->
+              <div class="sub-rows">
+                <div class="table-row sub-row">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="firefox">
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Browser cache</span>
+                    <span class="info-icon" title="Temporary files stored by your browser">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">120 MB</div>
+                  <div class="cell-items">654</div>
+                  <div class="cell-actions"></div>
+                </div>
+                <div class="table-row sub-row">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="firefox">
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Browsing cookies</span>
+                    <span class="info-icon" title="Small files websites use to remember you">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">65 MB</div>
+                  <div class="cell-items">134</div>
+                  <div class="cell-actions"></div>
+                </div>
+                <div class="table-row sub-row">
+                  <div class="cell-checkbox">
+                    <label class="checkbox">
+                      <input type="checkbox" class="sub-checkbox" data-browser="firefox">
+                      <span class="checkbox-box"></span>
+                    </label>
+                  </div>
+                  <div class="cell-browser">
+                    <span class="item-name">Website history</span>
+                    <span class="info-icon" title="Record of websites you've visited">
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="cell-size">15 MB</div>
+                  <div class="cell-items">44</div>
+                  <div class="cell-actions"></div>
                 </div>
               </div>
             </div>
@@ -1848,6 +2110,8 @@
     const backBtn = document.getElementById('backBtn');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const browserCheckboxes = document.querySelectorAll('.browser-checkbox');
+    const expandableRows = document.querySelectorAll('.table-row.expandable');
+    const browserRowGroups = document.querySelectorAll('.browser-row-group');
     
     // Always keep menu collapsed
     mainMenu.classList.add('collapsed');
@@ -1874,20 +2138,112 @@
     // Back button
     backBtn.addEventListener('click', showInitialView);
     
+    // Expand/Collapse functionality
+    expandableRows.forEach(row => {
+      const expandIcon = row.querySelector('.expand-icon');
+      if (expandIcon) {
+        expandIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const group = row.closest('.browser-row-group');
+          const subRows = group.querySelector('.sub-rows');
+          
+          row.classList.toggle('expanded');
+          subRows.classList.toggle('expanded');
+        });
+      }
+    });
+    
+    // Browser checkbox - select/deselect all sub-items
+    browserCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        const browser = checkbox.dataset.browser;
+        const group = checkbox.closest('.browser-row-group');
+        const subCheckboxes = group.querySelectorAll('.sub-checkbox');
+        const subRows = group.querySelectorAll('.table-row.sub-row');
+        
+        subCheckboxes.forEach(subCb => {
+          subCb.checked = checkbox.checked;
+        });
+        
+        // Update sub-row selected state
+        subRows.forEach(subRow => {
+          if (checkbox.checked) {
+            subRow.classList.add('selected');
+          } else {
+            subRow.classList.remove('selected');
+          }
+        });
+        
+        // Update parent row selected state
+        const parentRow = group.querySelector('.table-row.expandable');
+        if (checkbox.checked) {
+          parentRow.classList.add('expanded');
+          group.querySelector('.sub-rows').classList.add('expanded');
+        }
+        
+        updateSelectAllState();
+      });
+    });
+    
+    // Sub-checkbox change handler
+    document.querySelectorAll('.sub-checkbox').forEach(subCb => {
+      subCb.addEventListener('change', (e) => {
+        const subRow = subCb.closest('.table-row.sub-row');
+        const group = subCb.closest('.browser-row-group');
+        const browserCheckbox = group.querySelector('.browser-checkbox');
+        const allSubCheckboxes = group.querySelectorAll('.sub-checkbox');
+        
+        // Update sub-row selected state
+        if (subCb.checked) {
+          subRow.classList.add('selected');
+        } else {
+          subRow.classList.remove('selected');
+        }
+        
+        // Update browser checkbox state
+        const allChecked = Array.from(allSubCheckboxes).every(cb => cb.checked);
+        const someChecked = Array.from(allSubCheckboxes).some(cb => cb.checked);
+        
+        browserCheckbox.checked = allChecked;
+        browserCheckbox.indeterminate = someChecked && !allChecked;
+        
+        updateSelectAllState();
+      });
+    });
+    
+    // Update Select All state
+    function updateSelectAllState() {
+      const allBrowserCheckboxes = document.querySelectorAll('.browser-checkbox');
+      const allChecked = Array.from(allBrowserCheckboxes).every(cb => cb.checked);
+      const someChecked = Array.from(allBrowserCheckboxes).some(cb => cb.checked || cb.indeterminate);
+      
+      selectAllCheckbox.checked = allChecked;
+      selectAllCheckbox.indeterminate = someChecked && !allChecked;
+    }
+    
     // Select All checkbox functionality
     selectAllCheckbox.addEventListener('change', (e) => {
       browserCheckboxes.forEach(checkbox => {
         checkbox.checked = e.target.checked;
-      });
-    });
-    
-    // Update Select All when individual checkboxes change
-    browserCheckboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', () => {
-        const allChecked = Array.from(browserCheckboxes).every(cb => cb.checked);
-        const someChecked = Array.from(browserCheckboxes).some(cb => cb.checked);
-        selectAllCheckbox.checked = allChecked;
-        selectAllCheckbox.indeterminate = someChecked && !allChecked;
+        checkbox.indeterminate = false;
+        
+        // Also update all sub-checkboxes
+        const group = checkbox.closest('.browser-row-group');
+        const subCheckboxes = group.querySelectorAll('.sub-checkbox');
+        const subRows = group.querySelectorAll('.table-row.sub-row');
+        
+        subCheckboxes.forEach(subCb => {
+          subCb.checked = e.target.checked;
+        });
+        
+        subRows.forEach(subRow => {
+          if (e.target.checked) {
+            subRow.classList.add('selected');
+          } else {
+            subRow.classList.remove('selected');
+          }
+        });
       });
     });
   </script>
